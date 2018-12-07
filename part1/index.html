@@ -24,34 +24,28 @@
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/topojson.v2.min.js"></script>
 <script>
+	let svg = d3.select("svg");
+	let path = d3.geoPath();
 
-var svg = d3.select("svg");
+	d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
+	  if (error) throw error;
 
-var path = d3.geoPath();
+	  svg.append("g")
+		.attr("class", "states")
+		.selectAll("path")
+		.data(topojson.feature(us, us.objects.states).features)
+		.enter().append("path")
+		  .attr("d", path)
+		  .attr("id", function(d, i){ return "s" + i});
 
-d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
-  if (error) throw error;
-
-  svg.append("g")
-    .attr("class", "states")
-    .selectAll("path")
-    .data(topojson.feature(us, us.objects.states).features)
-    .enter().append("path")
-      .attr("d", path)
-      .attr("id", function(d, i){ return "s" + i});
-
-  svg.append("path")
-      .attr("class", "state-borders")
-      .attr("d", path(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })));
-});
-    
-var x = Math.random();
-var y = Math.random();
-console.log("x: " + x + " y: " + y);
-    
-console.log(svg.selectAll("path#s"));
-
-  
-
-
+	  svg.append("path")
+		  .attr("class", "state-borders")
+		  .attr("d", path(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })));
+	});
+		
+	let x = Math.random();
+	let y = Math.random();
+	console.log("x: " + x + " y: " + y);
+		
+	console.log(svg.selectAll("path#s"));
 </script>

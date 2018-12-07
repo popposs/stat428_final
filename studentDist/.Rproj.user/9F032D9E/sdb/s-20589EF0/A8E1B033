@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1544218569796.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "A8E1B033",
+    "lastKnownWriteTime" : 7308604914264011873,
+    "last_content_update" : 1544218569796,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "8C61D01D",
+        "caption" : "uiuc_students_by_state",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=uiuc_students_by_state&cache_key=8C61D01D",
+        "displayedObservations" : 2251,
+        "environment" : "",
+        "object" : "uiuc_students_by_state",
+        "preview" : 0,
+        "totalObservations" : 2251,
+        "variables" : 6
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

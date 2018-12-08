@@ -98,30 +98,31 @@ def distance(origin, destination):
 if __name__ == "__main__":
 	data = read_json_file('usa_state_shapes.json')
 	states = get_coords(data)
-	state_name = 'Vermont'
-	lng = states[state_name]['lng']
-	lat = states[state_name]['lat']
-	#bounds = mark_boundaries(lng, lat)
-	polygon = Polygon(zip(lng, lat))
 
-	n = 2000
-	v = run_mc(polygon, n)
+	for name in states.keys():
+		state_name = name
+		lng = states[state_name]['lng']
+		lat = states[state_name]['lat']
+		#bounds = mark_boundaries(lng, lat)
+		polygon = Polygon(zip(lng, lat))
 
-	lng_min = min(lng) # x axis
-	lng_max = max(lng) # x axis
-	lat_min = min(lat) # y axis
-	lat_max = max(lat) # y axis
+		n = 2000
+		v = run_mc(polygon, n)
 
-	ratio = 100. * len(v['accepted'][0]) / n
-	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
-	scaled = float(ratio * area / 100.)
+		lng_min = min(lng) # x axis
+		lng_max = max(lng) # x axis
+		lat_min = min(lat) # y axis
+		lat_max = max(lat) # y axis
 
-	print('Accepted: ' + str(ratio) + '%')
-	print('Area: %.2f km^2' % scaled)
+		ratio = 100. * len(v['accepted'][0]) / n
+		area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+		scaled = float(ratio * area / 100.)
 
-	plt.figure()
-	plt.plot(lng, lat)
-	plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.35, s=3)
-	plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.35, s=3)
-	plt.show()
+		print('Accepted: ' + str(ratio) + '%')
+		print('Area: %.2f km^2' % scaled)
 
+		plt.figure()
+		plt.plot(lng, lat)
+		plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.35, s=3)
+		plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.35, s=3)
+		plt.savefig(name + '_mc.png')

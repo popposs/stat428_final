@@ -53,7 +53,7 @@ def between(t, a, b):
 
 	return a <= t and t <= b
 
-def run_mc(bounds, p, reps=1000):
+def run_mc(bounds, p, reps=10000):
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
 	lat_min = min(lat) # y axis
@@ -88,9 +88,9 @@ def run_mc(bounds, p, reps=1000):
 if __name__ == "__main__":
 	data = read_json_file('usa_state_shapes.json')
 	states = get_coords(data)
-
-	lng = states['Texas']['lng']
-	lat = states['Texas']['lat']
+	state_name = 'Texas'
+	lng = states[state_name]['lng']
+	lat = states[state_name]['lat']
 	bounds = mark_boundaries(lng, lat)
 	polygon = Polygon(zip(lng, lat))
 	v = run_mc(bounds, polygon)

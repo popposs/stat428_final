@@ -25,6 +25,7 @@
   $.getJSON("http://localhost:5000/send",function(data){
     console.log(data)
     L.geoJson(data).addTo(map);
+    // map.invalidateSize();
   });
   </script>
 </body>

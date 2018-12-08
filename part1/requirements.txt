@@ -1,0 +1,7 @@
+matplotlib==3.0.2
+numpy==1.15.4
+PyGObject==3.30.1
+Shapely==1.6.4.post2
+virtualenv==16.0.0
+virtualenv-clone==0.3.0
+virtualenvwrapper==4.8.2

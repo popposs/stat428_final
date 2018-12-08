@@ -53,7 +53,7 @@ def between(t, a, b):
 
 	return a <= t and t <= b
 
-def run_mc(bounds, p, reps=1000):
+def run_mc(p, reps=1000):
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
 	lat_min = min(lat) # y axis
@@ -98,14 +98,14 @@ def distance(origin, destination):
 if __name__ == "__main__":
 	data = read_json_file('usa_state_shapes.json')
 	states = get_coords(data)
-	state_name = 'Illinois'
+	state_name = 'Vermont'
 	lng = states[state_name]['lng']
 	lat = states[state_name]['lat']
-	bounds = mark_boundaries(lng, lat)
+	#bounds = mark_boundaries(lng, lat)
 	polygon = Polygon(zip(lng, lat))
 
-	n = 1000
-	v = run_mc(bounds, polygon, n)
+	n = 2000
+	v = run_mc(polygon, n)
 
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
@@ -114,13 +114,14 @@ if __name__ == "__main__":
 
 	ratio = 100. * len(v['accepted'][0]) / n
 	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+	scaled = float(ratio * area / 100.)
 
 	print('Accepted: ' + str(ratio) + '%')
-	print('Area: ' + str(ratio * area / 100.) + ' km 2')
+	print('Area: %.2f km^2' % scaled)
 
 	plt.figure()
 	plt.plot(lng, lat)
-	plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.3, s=1)
-	plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.3, s=1)
+	plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.35, s=3)
+	plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.35, s=3)
 	plt.show()
 

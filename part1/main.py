@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import json
+import json, math
 import numpy as np
 from collections import defaultdict
 from shapely.geometry import Point
@@ -71,8 +71,6 @@ def run_mc(bounds, p, reps=1000):
 		random_y = y_rand * (lat_max - lat_min) + lat_min
 		point = Point(random_x, random_y)
 
-
-#		if between(random_x, bounds[random_x][0], bounds[random_x][1]) and between(random_y, bounds[random_y][0], bounds[random_y][1]): # this one
 		if p.contains(point):
 			accept_xs.append(random_x)
 			accept_ys.append(random_y)
@@ -82,16 +80,43 @@ def run_mc(bounds, p, reps=1000):
 		
 	return { "accepted": [accept_xs, accept_ys], "rejected": [reject_xs, reject_ys] }
 			
+# Haversine, great circle, from https://gist.github.com/rochacbruno/2883505
+def distance(origin, destination):
+    lat1, lon1 = origin
+    lat2, lon2 = destination
+    radius = 6371 # km
+
+    dlat = math.radians(lat2-lat1)
+    dlon = math.radians(lon2-lon1)
+    a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    d = radius * c
+
+    return d
 	
 if __name__ == "__main__":
 	data = read_json_file('usa_state_shapes.json')
 	states = get_coords(data)
-	state_name = 'Texas'
+	state_name = 'Illinois'
 	lng = states[state_name]['lng']
 	lat = states[state_name]['lat']
 	bounds = mark_boundaries(lng, lat)
 	polygon = Polygon(zip(lng, lat))
-	v = run_mc(bounds, polygon, 2000)
+
+	n = 1000
+	v = run_mc(bounds, polygon, n)
+
+	lng_min = min(lng) # x axis
+	lng_max = max(lng) # x axis
+	lat_min = min(lat) # y axis
+	lat_max = max(lat) # y axis
+
+	ratio = 100. * len(v['accepted'][0]) / n
+	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+
+	print('Accepted: ' + str(ratio) + '%')
+	print('Area: ' + str(ratio * area / 100.) + ' km 2')
 
 	plt.figure()
 	plt.plot(lng, lat)

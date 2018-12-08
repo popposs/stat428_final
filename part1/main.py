@@ -53,7 +53,7 @@ def between(t, a, b):
 
 	return a <= t and t <= b
 
-def run_mc(bounds, p, reps=10000):
+def run_mc(bounds, p, reps=1000):
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
 	lat_min = min(lat) # y axis
@@ -67,8 +67,6 @@ def run_mc(bounds, p, reps=10000):
 
 	for i in range(reps):
 		x_rand, y_rand = np.random.uniform(size=2)
-		print(x_rand, y_rand)
-
 		random_x = x_rand * (lng_max - lng_min) + lng_min
 		random_y = y_rand * (lat_max - lat_min) + lat_min
 		point = Point(random_x, random_y)
@@ -93,11 +91,11 @@ if __name__ == "__main__":
 	lat = states[state_name]['lat']
 	bounds = mark_boundaries(lng, lat)
 	polygon = Polygon(zip(lng, lat))
-	v = run_mc(bounds, polygon)
+	v = run_mc(bounds, polygon, 2000)
 
 	plt.figure()
 	plt.plot(lng, lat)
-	plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.3, s=.5)
-	plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.3, s=.5)
+	plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.3, s=1)
+	plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.3, s=1)
 	plt.show()
 

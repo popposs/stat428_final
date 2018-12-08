@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import json
 import numpy as np
 from collections import defaultdict
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 def flatten(L):
 	for item in L:
@@ -51,7 +53,7 @@ def between(t, a, b):
 
 	return a <= t and t <= b
 
-def run_mc(bounds, reps=1000):
+def run_mc(bounds, p, reps=1000):
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
 	lat_min = min(lat) # y axis
@@ -69,9 +71,11 @@ def run_mc(bounds, reps=1000):
 
 		random_x = x_rand * (lng_max - lng_min) + lng_min
 		random_y = y_rand * (lat_max - lat_min) + lat_min
-		print(random_x, random_y)
+		point = Point(random_x, random_y)
 
-		if between(random_x, bounds[random_x][0], bounds[random_x][1]) and between(random_y, bounds[random_y][0], bounds[random_y][1]): # this one
+
+#		if between(random_x, bounds[random_x][0], bounds[random_x][1]) and between(random_y, bounds[random_y][0], bounds[random_y][1]): # this one
+		if p.contains(point):
 			accept_xs.append(random_x)
 			accept_ys.append(random_y)
 		else:
@@ -88,7 +92,8 @@ if __name__ == "__main__":
 	lng = states['Texas']['lng']
 	lat = states['Texas']['lat']
 	bounds = mark_boundaries(lng, lat)
-	v = run_mc(bounds)
+	polygon = Polygon(zip(lng, lat))
+	v = run_mc(bounds, polygon)
 
 	plt.figure()
 	plt.plot(lng, lat)

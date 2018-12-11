@@ -21,11 +21,11 @@ def mark_boundaries(lng, lat):
 	for key, value in m.items():
 		m[key] = [min(value), max(value)]
 	return m
-		
+
 def read_json_file(filename):
 	json_file = open(filename)
 	json_str = json_file.read()
-	return json.loads(json_str) 
+	return json.loads(json_str)
 
 
 def get_coords(data):
@@ -53,7 +53,7 @@ def between(t, a, b):
 
 	return a <= t and t <= b
 
-def run_mc(p, reps=1000):
+def run_mc(p, lng, lat, reps=1000):
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
 	lat_min = min(lat) # y axis
@@ -61,7 +61,7 @@ def run_mc(p, reps=1000):
 
 	accept_xs = []
 	accept_ys = []
-	
+
 	reject_xs = []
 	reject_ys = []
 
@@ -77,9 +77,9 @@ def run_mc(p, reps=1000):
 		else:
 			reject_xs.append(random_x)
 			reject_ys.append(random_y)
-		
+
 	return { "accepted": [accept_xs, accept_ys], "rejected": [reject_xs, reject_ys] }
-			
+
 # Haversine, great circle, from https://gist.github.com/rochacbruno/2883505
 def distance(origin, destination):
     lat1, lon1 = origin
@@ -94,35 +94,68 @@ def distance(origin, destination):
     d = radius * c
 
     return d
-	
+
+def plot_results(lng, lat, v, state_name, ratio, scaled):
+	plt.figure()
+	plt.plot(lng, lat)
+	plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.35, s=3)
+	plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.35, s=3)
+	plt.title(state_name + ', Accepted: ' + str(ratio) + '%' + ', Area: %.2f km^2' % scaled , fontsize=10)
+	plt.savefig(state_name + '_mc.png')
+
+def entrypoint(state_name, reps):
+	lng = states[state_name]['lng']
+	lat = states[state_name]['lat']
+	polygon = Polygon(zip(lng, lat))
+	n = reps
+	v = run_mc(polygon, lng, lat, n)
+	lng_min = min(lng) # x axis
+	lng_max = max(lng) # x axis
+	lat_min = min(lat) # y axis
+	lat_max = max(lat) # y axis
+
+	ratio = 100. * len(v['accepted'][0]) / n
+	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+	scaled = float(ratio * area / 100.)
+
+	# plot_results(lng, lat, v, state_name, ratio, scaled)
+	return scaled
+
 if __name__ == "__main__":
-	data = read_json_file('usa_state_shapes.json')
+	data = read_json_file('usa_states_shapes.json')
+	areas = read_json_file('usa_states_areas.json')
 	states = get_coords(data)
 
-	for name in states.keys():
-		state_name = name
-		lng = states[state_name]['lng']
-		lat = states[state_name]['lat']
-		#bounds = mark_boundaries(lng, lat)
-		polygon = Polygon(zip(lng, lat))
+	area_points = []
+	reps = list(range(100, 2000, 100))
+	for r in reps:
+		mc_area = entrypoint('Illinois', r)
+		area_points.append(abs(areas['Illinois'] - mc_area) / areas['Illinois'])
+	plt.figure()
+	plt.plot(reps, area_points)
+	plt.show()
 
-		n = 2000
-		v = run_mc(polygon, n)
+	# for name in states.keys():
+	# 	state_name = name
+	# 	lng = states[state_name]['lng']
+	# 	lat = states[state_name]['lat']
+	# 	#bounds = mark_boundaries(lng, lat)
+	# 	polygon = Polygon(zip(lng, lat))
 
-		lng_min = min(lng) # x axis
-		lng_max = max(lng) # x axis
-		lat_min = min(lat) # y axis
-		lat_max = max(lat) # y axis
+	# 	n = 1000
+	# 	v = run_mc(polygon, n)
+	#	v = run_mc(polygon, lng, lat, n)
 
-		ratio = 100. * len(v['accepted'][0]) / n
-		area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
-		scaled = float(ratio * area / 100.)
+	# 	lng_min = min(lng) # x axis
+	# 	lng_max = max(lng) # x axis
+	# 	lat_min = min(lat) # y axis
+	# 	lat_max = max(lat) # y axis
 
-		print('Accepted: ' + str(ratio) + '%')
-		print('Area: %.2f km^2' % scaled)
+	# 	ratio = 100. * len(v['accepted'][0]) / n
+	# 	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+	# 	scaled = float(ratio * area / 100.)
 
-		plt.figure()
-		plt.plot(lng, lat)
-		plt.scatter(v['accepted'][0], v['accepted'][1], c='blue', alpha=.35, s=3)
-		plt.scatter(v['rejected'][0], v['rejected'][1], c='red', alpha=.35, s=3)
-		plt.savefig(name + '_mc.png')
+	# 	print('Accepted: ' + str(ratio) + '%')
+	# 	print('Area: %.2f km^2' % scaled)
+
+	#	plot_results(lng, lat, v, state_name, ratio, scaled)

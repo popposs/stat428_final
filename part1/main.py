@@ -65,7 +65,10 @@ def run_mc(p, lng, lat, reps=1000):
 	reject_xs = []
 	reject_ys = []
 
-	for i in range(reps):
+	acceptance = []
+	num_accepted = 0
+
+	for i in range(1, reps):
 		x_rand, y_rand = np.random.uniform(size=2)
 		random_x = x_rand * (lng_max - lng_min) + lng_min
 		random_y = y_rand * (lat_max - lat_min) + lat_min
@@ -74,11 +77,14 @@ def run_mc(p, lng, lat, reps=1000):
 		if p.contains(point):
 			accept_xs.append(random_x)
 			accept_ys.append(random_y)
+			num_accepted += 1
+			acceptance.append(num_accepted / i)
 		else:
 			reject_xs.append(random_x)
 			reject_ys.append(random_y)
+			acceptance.append(num_accepted / i)
 
-	return { "accepted": [accept_xs, accept_ys], "rejected": [reject_xs, reject_ys] }
+	return { "accepted": [accept_xs, accept_ys], "rejected": [reject_xs, reject_ys], "acceptance": acceptance }
 
 # Haversine, great circle, from https://gist.github.com/rochacbruno/2883505
 def distance(origin, destination):
@@ -103,7 +109,7 @@ def plot_results(lng, lat, v, state_name, ratio, scaled):
 	plt.title(state_name + ', Accepted: ' + str(ratio) + '%' + ', Area: %.2f km^2' % scaled , fontsize=10)
 	plt.savefig(state_name + '_mc.png')
 
-def entrypoint(state_name, reps):
+def entrypoint(state_name, reps, chunks=10):
 	lng = states[state_name]['lng']
 	lat = states[state_name]['lat']
 	polygon = Polygon(zip(lng, lat))
@@ -114,26 +120,32 @@ def entrypoint(state_name, reps):
 	lat_min = min(lat) # y axis
 	lat_max = max(lat) # y axis
 
-	ratio = 100. * len(v['accepted'][0]) / n
-	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
-	scaled = float(ratio * area / 100.)
+	accepted = v['acceptance']
 
-	# plot_results(lng, lat, v, state_name, ratio, scaled)
+	scaled = []
+	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+	for ratio in accepted:
+		scaled.append(float(ratio * area))
+
 	return scaled
+	# plot_results(lng, lat, v, state_name, ratio, scaled)
 
 if __name__ == "__main__":
 	data = read_json_file('usa_states_shapes.json')
 	areas = read_json_file('usa_states_areas.json')
 	states = get_coords(data)
 
-	area_points = []
-	reps = list(range(100, 2000, 100))
-	for r in reps:
-		mc_area = entrypoint('Illinois', r)
-		area_points.append(abs(areas['Illinois'] - mc_area) / areas['Illinois'])
-	plt.figure()
-	plt.plot(reps, area_points)
-	plt.show()
+	for state_name in states.keys():
+		print(state_name)
+		plt.figure()
+		for i in range(5):
+			area_points = []
+			mc_area = entrypoint('Illinois', 1000)
+			for i in mc_area:
+				area_points.append(abs(areas['Illinois'] - i) / areas['Illinois'])
+			plt.plot(list(range(len(mc_area))), area_points)
+		plt.title(state_name, fontsize=10)
+		plt.savefig(state_name + '_errorplot.png')
 
 	# for name in states.keys():
 	# 	state_name = name

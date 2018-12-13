@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <title>Geo contains</title>
+</head>
+
+<style>
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+</style>
+
+<body>
+  <div id="content">
+    <div>Click an area to highlight</div>
+    <canvas id="myCanvas" width="800" height="400"></canvas>
+      <svg id="svg" width="1000" height="1000"></svg>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.9.1/d3.min.js"></script>
+  <script src="https://d3js.org/topojson.v2.min.js"></script>
+
+  <script>
+var geojson = {}
+
+var context = d3.select('#content canvas')
+  .node()
+  .getContext('2d');
+
+var projection = d3.geoMercator()
+  .scale(700).translate([1600, 710]);;
+
+var geoGenerator = d3.geoPath()
+  .projection(projection)
+  .context(context);
+
+var state = {
+  clickedLocation: null
+}
+
+function handleClick() {
+  var pos = d3.mouse(this)
+  console.log(pos);
+  state.clickedLocation = projection.invert(pos);
+  console.log(state.clickedLocation);
+  update();
+}
+
+function initialise() {
+  d3.select('canvas')
+    .on('click', handleClick);
+}
+
+function update() {
+  context.clearRect(0, 0, 800, 400);
+
+  geojson.features.slice(2, 53).forEach(function(d) {
+    context.beginPath();
+    context.fillStyle = state.clickedLocation && d3.geoContains(d, state.clickedLocation) ? 'red' : '#aaa';
+    geoGenerator(d);
+    context.fill();
+  })
+}
+
+
+
+// REQUEST DATA
+d3.json('https://s3-us-west-2.amazonaws.com/vida-public/geo/us.json', function(err, json) {
+  geojson =  topojson.feature(json, json.objects.states);
+  initialise();
+  update();
+  startMonteCarlos();
+})
+
+
+var canvas = document.getElementById('myCanvas');
+      var context = canvas.getContext('2d');
+    var blues = 0,
+    reds = 0,
+    pi = 0,
+    totalSamples =0;
+var formatPi = d3.format('.10f');
+
+function startMonteCarlos(){    
+d3.timer(function() {
+  var cx = Math.random()*800,
+      cy = Math.random()*400;
+     
+//  var cx = 362.996,
+//      cy = 374.628;
+ //console.log(data);
+ //console.log(d3.geoContains(data[26], [ -88.38101109485234, 34.99556074135408]));
+ var coords = projection.invert([cx,cy]);
+    var data = context.getImageData(cx, cy, 1, 1).data;
+  //console.log('rgba(' + data[0] + ', ' + data[1] +
+ //            ', ' + data[2] + ', ' + (data[3] / 255) + ')');
+   // console.log('red');
+  if ('rgba(' + data[0] + ', ' + data[1] + ', ' + data[2] + ', ' + (data[3] / 255) + ')'== 'rgba(255, 0, 0, 1)') {
+    console.log("ILLINOIS HIT at: " + cx + " " + cy);
+    blues +=1;
+    var color = "#66bd63"
+  }else {
+    reds +=1
+    var color = "#f46d43"
+  };
+  
+  area = (blues / (blues + reds)); 
+  
+  value.text("Area = " + formatPi(area));
+
+
+  drawCircle(cx, cy);
+  
+  return ++totalSamples > 500;
+});  
+}
+      let svg = d3.select("svg").attr("width", 1000).attr("height", 200);
+
+var value = svg.append("text")
+  .attr("x", 100)
+  .attr("y", 40)
+  .style("text-anchor","middle")
+  .style("font-size","35px")
+  .text("area = 0");
+      
+    
+      
+function drawCircle(x, y){
+
+
+      var centerX = x;
+      var centerY = y;
+      var radius = 2;
+
+      context.beginPath();
+      context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+      context.fillStyle = 'green';
+      context.fill();
+      context.lineWidth = 1;
+      context.strokeStyle = '#003300';
+      context.stroke();
+
+}
+
+  </script>
+</body>
+</html>

@@ -10,28 +10,53 @@ body {
   font-size: 14px;
   color: #333;
 }
+    
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+    
 </style>
 
 <body>
   <div id="content">
     <div>Click an area to highlight</div>
-    <canvas id="myCanvas" width="800" height="400"></canvas>
-      <svg id="svg" width="1000" height="1000"></svg>
+    <canvas id="myCanvas" width="800" height="400"></canvas>      
+      <svg id="graph" width="1000" height="1000"></svg>
+
 
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.9.1/d3.min.js"></script>
-  <script src="https://d3js.org/topojson.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.9.1/d3.min.js"></script>
+<script src="https://unpkg.com/d3-geo-scale-bar@0.2.0/build/d3-geo-scale-bar.min.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
+<script src="states.js"></script>
+
 
   <script>
 var geojson = {}
 
+var width = 800,
+    height = 400;
+
+var selected = -1;
+      
+var graphData = [];
+
+var totalArea = 0;
+      
+var inState = 0,
+    outState = 0,
+    totalSamples =0;
+      
+var canvas = document.getElementById('myCanvas');
 var context = d3.select('#content canvas')
   .node()
   .getContext('2d');
 
 var projection = d3.geoMercator()
-  .scale(700).translate([1600, 710]);;
+  .scale(740).translate([1650, 720]);;
 
 var geoGenerator = d3.geoPath()
   .projection(projection)
@@ -43,10 +68,14 @@ var state = {
 
 function handleClick() {
   var pos = d3.mouse(this)
-  console.log(pos);
   state.clickedLocation = projection.invert(pos);
-  console.log(state.clickedLocation);
+  inState = 0;
+  outState = 0;
+  totalSamples =0;
+  graphData = [];
   update();
+  startMonteCarlos();
+
 }
 
 function initialise() {
@@ -57,94 +86,395 @@ function initialise() {
 function update() {
   context.clearRect(0, 0, 800, 400);
 
-  geojson.features.slice(2, 53).forEach(function(d) {
+  geojson.features.forEach(function(d) {
     context.beginPath();
     context.fillStyle = state.clickedLocation && d3.geoContains(d, state.clickedLocation) ? 'red' : '#aaa';
+    if(context.fillStyle = state.clickedLocation && d3.geoContains(d, state.clickedLocation)){
+        selected = d.id;
+        
+    }
     geoGenerator(d);
     context.fill();
   })
+  
+    
 }
-
 
 
 // REQUEST DATA
 d3.json('https://s3-us-west-2.amazonaws.com/vida-public/geo/us.json', function(err, json) {
+    
+  totalArea = 57915/0.0100875;
   geojson =  topojson.feature(json, json.objects.states);
+    
+  geojson.features.splice(1, 1);
+  geojson.features.splice(8, 1);
+  geojson.features.splice(38, 1);
+  geojson.features.splice(49, 1);
+
+    
+  geojson.features.forEach(function(d, i){ 
+    d.id = i - 1;
+  });
+
   initialise();
   update();
-  startMonteCarlos();
+
 })
 
 
-var canvas = document.getElementById('myCanvas');
-      var context = canvas.getContext('2d');
-    var blues = 0,
-    reds = 0,
-    pi = 0,
-    totalSamples =0;
-var formatPi = d3.format('.10f');
-
-function startMonteCarlos(){    
-d3.timer(function() {
-  var cx = Math.random()*800,
-      cy = Math.random()*400;
-     
-//  var cx = 362.996,
-//      cy = 374.628;
- //console.log(data);
- //console.log(d3.geoContains(data[26], [ -88.38101109485234, 34.99556074135408]));
- var coords = projection.invert([cx,cy]);
-    var data = context.getImageData(cx, cy, 1, 1).data;
-  //console.log('rgba(' + data[0] + ', ' + data[1] +
- //            ', ' + data[2] + ', ' + (data[3] / 255) + ')');
-   // console.log('red');
-  if ('rgba(' + data[0] + ', ' + data[1] + ', ' + data[2] + ', ' + (data[3] / 255) + ')'== 'rgba(255, 0, 0, 1)') {
-    console.log("ILLINOIS HIT at: " + cx + " " + cy);
-    blues +=1;
-    var color = "#66bd63"
-  }else {
-    reds +=1
-    var color = "#f46d43"
-  };
-  
-  area = (blues / (blues + reds)); 
-  
-  value.text("Area = " + formatPi(area));
-
-
-  drawCircle(cx, cy);
-  
-  return ++totalSamples > 500;
-});  
+function findState(id){
+    var out = -1;
+    realAreas.forEach(function(d){
+        
+        if(d.id === id){
+            out = d.area;
+        }
+        
+    });
+    return out;
 }
-      let svg = d3.select("svg").attr("width", 1000).attr("height", 200);
+      
+function startMonteCarlos(){    
+    d3.timer(function() {
+      var cx = Math.random()*800,
+          cy = Math.random()*400;
+
+     var coords = projection.invert([cx,cy]);
+     var data = context.getImageData(cx, cy, 1, 1).data;
+
+      if ('rgba(' + data[0] + ', ' + data[1] + ', ' + data[2] + ', ' + (data[3] / 255) + ')'== 'rgba(255, 0, 0, 1)') {
+        //console.log("State HIT at: " + cx + " " + cy);
+        inState +=1;
+        var color = "#66bd63"
+      }else {
+        outState +=1
+        var color = "#f46d43"
+      };
+
+     estimatedArea = Math.round((inState / (inState + outState))* totalArea); 
+
+      value.text("Area = " + estimatedArea);
+      samples.text("Samples = " + totalSamples);
+   
+      if(totalSamples % 20 == 0){
+          graphData.push([totalSamples, estimatedArea - findState(selected)]);
+          updateData();
+      }
+
+      drawCircle(cx, cy);
+
+      return ++totalSamples > 500;
+    });  
+}
+    
+
+//print percentage on map
+let svg = d3.select("svg").attr("width", 1000).attr("height", 1000);
 
 var value = svg.append("text")
-  .attr("x", 100)
+  .attr("x", 120)
   .attr("y", 40)
-  .style("text-anchor","middle")
+  //.style("text-anchor","middle")
   .style("font-size","35px")
   .text("area = 0");
+
+var samples = svg.append("text")
+  .attr("x", 120)
+  .attr("y", 70)
+  //.style("text-anchor","middle")
+  .style("font-size","35px")
+  .text("samples = 0");
       
-    
-      
+
 function drawCircle(x, y){
-
-
       var centerX = x;
       var centerY = y;
-      var radius = 2;
+      var radius = 1;
 
       context.beginPath();
-      context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
-      context.fillStyle = 'green';
-      context.fill();
+      context.arc(centerX, centerY, radius, 0, 1 * Math.PI, false);
       context.lineWidth = 1;
       context.strokeStyle = '#003300';
       context.stroke();
 
 }
 
+
+// set the dimensions and margins of the graph
+var margin = {top: 100, right: 20, bottom: 30, left: 50},
+    width = 800 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+
+// set the ranges
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
+
+// define the line
+var valueline = d3.line()
+    .x(function(d) { return x(d[0]); })
+    .y(function(d) { return y(d[1]); });
+
+let graph = d3.select("svg").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  // Scale the range of the data
+  x.domain(d3.extent(graphData, function(d) { return d[0]; }));
+  y.domain([d3.min(graphData, function(d) { return d[1]; }), d3.max(graphData, function(d) { return d[1]; })]);
+  //y.domain([-100000,-100000]);
+
+  // Add the valueline path.
+  graph.append("path")
+      .data([graphData])
+      .attr("class", "line")
+      .attr("d", valueline);
+
+  // Add the X Axis
+  var xAxis = d3.axisBottom(x);      
+  graph.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height/2 + ")")
+      .call(xAxis);
+
+  // Add the Y Axis
+  var yAxis = d3.axisLeft(y);
+  graph.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+
+//Updates the error graph      
+function updateData() {
+
+    // Scale the range of the data again 
+    x.domain(d3.extent(graphData, function(d) { return d[0]; }));
+    y.domain([-findState(selected),findState(selected)]);
+  //y.domain([d3.min(graphData, function(d) { return d[1]; }), d3.max(graphData, function(d) { return d[1]; })]);
+
+    // Select the section we want to apply our changes to
+    var change = d3.select("svg").transition();
+
+    // Make the changes
+        change.select(".line")   // change the line
+            .duration(750)
+            .attr("d", valueline(graphData));
+       change.select(".x.axis") // change the x axis
+            .duration(750)
+            .call(xAxis);
+        change.select(".y.axis") // change the y axis
+            .duration(750)
+            .call(yAxis);
+
+}      
+
+//Holds the real states' areas     
+var realAreas = [
+{ id: 1,
+  name: "Alabama",
+  area: 52420.07
+},
+{ id: 0,
+  name: "Alaska",
+  area: 665384.04
+},
+{ id: 3,
+  name: "Arizona",
+  area: 113990.30 
+},
+{ id: 2,
+  name: "Arkansas",
+  area: 53178.55
+},
+{ id: 4,
+  name: "California",
+  area: 163696.32
+},
+{ id: 5,
+  name: "Colorado",
+  area: 104093.67
+},
+{ id: 6,
+  name: "Connecticut",
+  area: 5543.41
+},
+{ id: 7,
+  name: "Delaware",
+  area: 2488.72
+},
+{ id: 8,
+  name: "Florida",
+  area: 65757.70
+},
+{ id: 9,
+  name: "Georgia",
+  area:  59425.15
+},
+{ id: 99,
+  name: "Hawaii",
+  area: 10931.72
+},
+{ id: 11,
+  name: "Idaho",
+  area: 83568.95
+},
+{ id: 12,
+  name: "Illinois",
+  area: 57913.55
+},
+{ id: 13,
+  name: "Indiana",
+  area: 36419.55
+},
+{ id: 10,
+  name: "Iowa",
+  area: 56272.81
+},
+{ id: 14,
+  name: "Kansas",
+  area: 82278.36
+},
+{ id: 15,
+  name: "Kentucky",
+  area: 40407.80
+},
+{ id: 16,
+  name: "Louisiana",
+  area: 52378.13 
+},
+{ id: 19,
+  name: "Maine",
+  area: 35379.74
+},
+{ id: 18,
+  name: "Maryland",
+  area: 12405.93
+},
+{ id: 17,
+  name: "Massachusetts",
+  area: 10554.39
+},
+{ id: 20,
+  name: "Michigan",
+  area: 96713.51
+},
+{ id: 21,
+  name: "Minnesota",
+  area: 86935.83
+},
+{ id: 23,
+  name: "Mississippi",
+  area: 48431.78
+},
+{ id: 22,
+  name: "Missouri",
+  area: 69706.99
+},
+{ id: 24,
+  name: "Montana",
+  area: 147039.71
+},
+{ id: 27,
+  name: "Nebraska",
+  area: 77347.81
+},
+{ id: 31,
+  name: "Nevada",
+  area: 110571.82
+},
+{ id: 28,
+  name: "New Hampshire",
+  area: 9349.16
+},
+{ id: 29,
+  name: "New Jersey",
+  area: 8722.58
+},
+{ id: 30,
+  name: "New Mexico",
+  area: 121590.30
+},
+{ id: 32,
+  name: "New York",
+  area: 54554.98
+},
+{ id: 25,
+  name: "North Carolina",
+  area: 53819.16
+},
+{ id: 26,
+  name: "North Dakota",
+  area: 70698.32
+},
+{ id: 33,
+  name: "Ohio",
+  area: 44825.58
+},
+{ id: 34,
+  name: "Oklahoma",
+  area: 69898.87
+},
+{ id: 35,
+  name: "Oregon",
+  area: 98378.54
+},
+{ id: 36,
+  name: "Pennsylvania",
+  area: 46054.35
+},
+{ id: 98,
+  name: "Rhode Island",
+  area: 1544.89
+},
+{ id: 37,
+  name: "South Carolina",
+  area: 32020.49
+},
+{ id: 38,
+  name: "South Dakota",
+  area: 77115.68
+},
+{ id: 39,
+  name: "Tennessee",
+  area: 42144.25
+},
+{ id: 40,
+  name: "Texas",
+  area: 268596.46
+},
+{ id: 41,
+  name: "Utah",
+  area: 84896.88
+},
+{ id: 43,
+  name: "Vermont",
+  area: 9616.36
+},
+{ id: 42,
+  name: "Virginia",
+  area: 42774.93
+},
+{ id: 44,
+  name: "Washington",
+  area: 71297.95
+},
+{ id: 46,
+  name: "West Virginia",
+  area: 24230.04
+},
+{ id: 45,
+  name: "Wisconsin",
+  area: 65496.38
+},
+{ id: 47,
+  name: "Wyoming",
+  area: 97813.01
+}
+]	      
+      
   </script>
 </body>
 </html>

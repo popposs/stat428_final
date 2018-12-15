@@ -127,47 +127,48 @@ def entrypoint(state_name, reps, chunks=10):
 	for ratio in accepted:
 		scaled.append(float(ratio * area))
 
-	return scaled
-	# plot_results(lng, lat, v, state_name, ratio, scaled)
+	# return scaled # uncomment for part 2
+	plot_results(lng, lat, v, state_name, ratio, scaled)
 
 if __name__ == "__main__":
 	data = read_json_file('usa_states_shapes.json')
 	areas = read_json_file('usa_states_areas.json')
 	states = get_coords(data)
 
-	for state_name in states.keys():
-		print(state_name)
-		plt.figure()
-		for i in range(5):
-			area_points = []
-			mc_area = entrypoint('Illinois', 1000)
-			for i in mc_area:
-				area_points.append(abs(areas['Illinois'] - i) / areas['Illinois'])
-			plt.plot(list(range(len(mc_area))), area_points)
-		plt.title(state_name, fontsize=10)
-		plt.savefig(state_name + '_errorplot.png')
+	# uncomment for part 2
+	# for state_name in states.keys():
+	# 	print(state_name)
+	# 	plt.figure()
+	# 	for i in range(5):
+	# 		area_points = []
+	# 		mc_area = entrypoint('Illinois', 1000)
+	# 		for i in mc_area:
+	# 			area_points.append(abs(areas['Illinois'] - i) / areas['Illinois'])
+	# 		plt.plot(list(range(len(mc_area))), area_points)
+	# 	plt.title(state_name, fontsize=10)
+	# 	plt.savefig(state_name + '_errorplot.png')
 
-	# for name in states.keys():
-	# 	state_name = name
-	# 	lng = states[state_name]['lng']
-	# 	lat = states[state_name]['lat']
-	# 	#bounds = mark_boundaries(lng, lat)
-	# 	polygon = Polygon(zip(lng, lat))
+	for name in states.keys():
+		state_name = name
+		lng = states[state_name]['lng']
+		lat = states[state_name]['lat']
+		#bounds = mark_boundaries(lng, lat)
+		polygon = Polygon(zip(lng, lat))
 
-	# 	n = 1000
-	# 	v = run_mc(polygon, n)
-	#	v = run_mc(polygon, lng, lat, n)
+		n = 1000
+		# v = run_mc(polygon, n)
+		v = run_mc(polygon, lng, lat, n)
 
-	# 	lng_min = min(lng) # x axis
-	# 	lng_max = max(lng) # x axis
-	# 	lat_min = min(lat) # y axis
-	# 	lat_max = max(lat) # y axis
+		lng_min = min(lng) # x axis
+		lng_max = max(lng) # x axis
+		lat_min = min(lat) # y axis
+		lat_max = max(lat) # y axis
 
-	# 	ratio = 100. * len(v['accepted'][0]) / n
-	# 	area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
-	# 	scaled = float(ratio * area / 100.)
+		ratio = 100. * len(v['accepted'][0]) / n
+		area = distance([lat_min, lng_min ], [lat_max, lng_min]) * distance([lat_min, lng_min], [lat_min, lng_max])
+		scaled = float(ratio * area / 100.)
 
-	# 	print('Accepted: ' + str(ratio) + '%')
-	# 	print('Area: %.2f km^2' % scaled)
+		print('Accepted: ' + str(ratio) + '%')
+		print('Area: %.2f km^2' % scaled)
 
-	#	plot_results(lng, lat, v, state_name, ratio, scaled)
+		plot_results(lng, lat, v, state_name, ratio, scaled)

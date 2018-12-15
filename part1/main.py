@@ -5,6 +5,7 @@ from collections import defaultdict
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
+# helper function to flatten arrays
 def flatten(L):
 	for item in L:
 		try:
@@ -12,6 +13,7 @@ def flatten(L):
 		except TypeError:
 			yield item
 
+# helper function to create a dictionary of x values to y (to determine whether candidate point is in polygon)
 def mark_boundaries(lng, lat):
 	m = defaultdict(list)
 	for (a, b) in list(zip(lng, lat)):
@@ -22,12 +24,13 @@ def mark_boundaries(lng, lat):
 		m[key] = [min(value), max(value)]
 	return m
 
+# helper function to read in .json format files to objects
 def read_json_file(filename):
 	json_file = open(filename)
 	json_str = json_file.read()
 	return json.loads(json_str)
 
-
+# maps state names to their latitude and longitude points
 def get_coords(data):
 	states = {}
 	for i in range(len(data['features'])):
@@ -46,13 +49,15 @@ def get_coords(data):
 		states[meta_data['NAME']] = { 'meta_data': meta_data, 'lng': lng, 'lat': lat }
 	return states
 
-
+# helper function to check if target t is between a and b
 def between(t, a, b):
 	if b < a:
 		a, b = b, a
 
 	return a <= t and t <= b
 
+# function to run the montecarlo at a default of 1000 repetitions
+# returns an object of accepted and rejected coordinates, as well as the acceptance ratios at each iteration
 def run_mc(p, lng, lat, reps=1000):
 	lng_min = min(lng) # x axis
 	lng_max = max(lng) # x axis
@@ -87,6 +92,7 @@ def run_mc(p, lng, lat, reps=1000):
 	return { "accepted": [accept_xs, accept_ys], "rejected": [reject_xs, reject_ys], "acceptance": acceptance }
 
 # Haversine, great circle, from https://gist.github.com/rochacbruno/2883505
+# Translates coordinate to km
 def distance(origin, destination):
     lat1, lon1 = origin
     lat2, lon2 = destination
@@ -101,6 +107,8 @@ def distance(origin, destination):
 
     return d
 
+# processes the results and formats / colors the plot
+# saves the matplotlib graph
 def plot_results(lng, lat, v, state_name, ratio, scaled):
 	plt.figure()
 	plt.plot(lng, lat)
@@ -109,6 +117,9 @@ def plot_results(lng, lat, v, state_name, ratio, scaled):
 	plt.title(state_name + ', Accepted: ' + str(ratio) + '%' + ', Area: %.2f km^2' % scaled , fontsize=10)
 	plt.savefig(state_name + '_mc.png')
 
+# entry function that calls all the other ones
+# collects all the coordinates by statename and runs the simulations
+# returns the estimated area
 def entrypoint(state_name, reps, chunks=10):
 	lng = states[state_name]['lng']
 	lat = states[state_name]['lat']
@@ -130,6 +141,7 @@ def entrypoint(state_name, reps, chunks=10):
 	# return scaled # uncomment for part 2
 	plot_results(lng, lat, v, state_name, ratio, scaled)
 
+# main function that processes importing files and plots errors
 if __name__ == "__main__":
 	data = read_json_file('usa_states_shapes.json')
 	areas = read_json_file('usa_states_areas.json')
